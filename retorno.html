@@ -396,11 +396,24 @@ async function enviarGrupo() {
 }
 
 /* ===================== PAINEL DA CHEFIA (#chefia) ===================== */
-let ACESSOS = [], GRP = {}, pendAnt = -1, audio, ABERTOS = new Set(), CARGA = null, confirmaRecarga = "";
+let ACESSOS = [], GRP = {}, pendAnt = -1, audio, ABERTOS = new Set(), CARGA = null, confirmaRecarga = "", EDIT = null, adiado = false, confirmaExcluir = "";
 try { CARGA = JSON.parse(localStorage.getItem("cncg_carga") || "null"); } catch (e) {}
-function linhaPessoa(p) {
+function formChefia(gid, p) {
+  return `<tr><td colspan="4"><div class="pes" data-form="${esc(gid)}" data-pid="${esc(p.id || "")}"><div class="dupla">
+    <div class="campo"><label>Nome</label><input data-f="nome" maxlength="120" value="${esc(p.nome || "")}"></div>
+    <div class="campo"><label>Função</label><input data-f="funcao" maxlength="70" value="${esc(p.funcao || "")}"></div></div>
+    <div class="dupla"><div class="campo"><label>Voo</label><input data-f="voo" maxlength="12" value="${esc(p.voo || "")}"></div>
+    <div class="campo"><label>Data do voo</label><input data-f="data" type="date" min="2026-11-12" max="2026-11-20" value="${esc(p.data || "")}"></div>
+    <div class="campo"><label>Hora do voo</label><input data-f="hora" type="time" value="${esc(p.hora || "")}"></div></div>
+    <label class="row" style="font-weight:600"><input type="checkbox" data-f="viatura" style="width:auto;min-height:0" ${p.viatura === false ? "" : "checked"}> Precisa de viatura</label>
+    <div class="row"><button class="btn sm solid" data-salvar-chefia>Salvar (Chefia)</button><button class="btn sm ghost" data-cancelar-chefia>Cancelar</button></div></div></td></tr>`;
+}
+function linhaPessoa(gid, p) {
+  if (EDIT && EDIT.gid === gid && EDIT.pid === p.id) return formChefia(gid, p);
   const voo = p.voo && p.data && p.hora ? `${esc(p.voo)} · ${dBR(p.data)} · ${esc(p.hora)}` : `<span class="pend">sem voo</span>`;
-  return `<tr><td><b>${esc(p.nome)}</b><small>${esc(p.funcao || "")}</small></td><td>${voo}</td><td>${rotuloSit(p)}</td></tr>`;
+  return `<tr><td><b>${esc(p.nome)}</b><small>${esc(p.funcao || "")}</small></td><td>${voo}</td><td>${rotuloSit(p)}</td>
+    <td><div class="row"><button class="btn sm ghost" data-ed="${esc(gid)}|${esc(p.id)}">Editar</button>
+    <button class="btn sm ghost" data-ret="${esc(gid)}|${esc(p.id)}">${p.situacao === "retirado" ? "Desfazer" : "Retirar"}</button></div></td></tr>`;
 }
 function detalhes(g) {
   const P = g.pessoas || [], E = montarEmbarques(P, g.horas || {});
@@ -408,7 +421,8 @@ function detalhes(g) {
   const temCarga = CARGA && (CARGA.grupos || []).some(x => x.id === g.id);
   return `<div style="display:grid;gap:10px;padding:6px 0">
     <p class="cap">${g.enviado ? `Enviado por <b>${esc(g.enviado_por || "")}</b>` : "Ainda não enviado"}${g.atualizado_em ? " · última gravação " + hhmm(g.atualizado_em) : ""}</p>
-    ${P.length ? `<table><thead><tr><th>Pessoa</th><th>Voo de retorno</th><th>Situação</th></tr></thead><tbody>${P.map(linhaPessoa).join("")}</tbody></table>` : `<p class="cap">Nenhuma pessoa no grupo.</p>`}
+    ${P.length || (EDIT && EDIT.gid === g.id) ? `<table><thead><tr><th>Pessoa</th><th>Voo de retorno</th><th>Situação</th><th></th></tr></thead><tbody>${P.map(p => linhaPessoa(g.id, p)).join("")}${EDIT && EDIT.gid === g.id && EDIT.pid === "" ? formChefia(g.id, {}) : ""}</tbody></table>` : `<p class="cap">Nenhuma pessoa no grupo.</p>`}
+    ${EDIT ? "" : `<button class="btn sm" style="justify-self:start" data-incl="${esc(g.id)}">+ Incluir pessoa (Chefia)</button>`}
     ${E.length ? `<table><thead><tr><th>Viatura no local</th><th>Voo</th><th>Quem vai</th></tr></thead><tbody>${E.map(e => `<tr><td><b>${dBR(e.data)} ${esc(e.hora)}</b><small>${esc(g.local || "Hotel Tauá")}${e.sugerido ? " · sugerido" : ""}</small></td><td>${esc(e.voo)}<small>${dBR(e.dataVoo)} ${esc(e.horaVoo)}</small></td><td>${e.pessoas.map(id => esc(nome(id))).join("<br>")}</td></tr>`).join("")}</tbody></table>` : `<p class="cap">Sem embarques (ninguém com voo, data e hora).</p>`}
     <div class="row"><button class="btn sm ${confirmaRecarga === g.id && temCarga ? "solid" : "ghost"}" data-recarga="${esc(g.id)}">${confirmaRecarga === g.id && temCarga ? "Confirmar: substituir " + esc(g.nome) + " pela planilha" : "Recarregar da planilha (só este grupo)"}</button>
       ${confirmaRecarga === g.id && temCarga ? `<span class="cap">Apaga o que este grupo enviou e volta à lista da planilha. Os demais grupos não mudam.</span><button class="btn sm ghost" data-cancela-recarga>Cancelar</button>` : ""}
@@ -425,8 +439,9 @@ function iniciarChefia() {
     limpar();
     if (!u || u.isAnonymous || u.uid !== CAP_UID) return telaLogin(u && !u.isAnonymous);
     const falha = e => { sync("erro " + e.code); $("#app").innerHTML = `<div class="box"><div class="nota">Sem permissão no banco (${esc(e.code)}). Confira se as regras de _firestore_rules.txt foram publicadas no Firebase.</div></div>`; };
-    unsubs.push(db.collection("acessos").onSnapshot(s => { ACESSOS = s.docs.map(d => ({uid: d.id, ...d.data()})); sync("conectado"); painel(); }, falha));
-    unsubs.push(db.collection("grupos").onSnapshot(s => { GRP = {}; s.docs.forEach(d => GRP[d.id] = {id: d.id, ...d.data()}); painel(); }, falha));
+    const redesenha = () => { if (EDIT) { adiado = true; return; } painel(); };   // não apaga o que a Chefia está digitando
+    unsubs.push(db.collection("acessos").onSnapshot(s => { ACESSOS = s.docs.map(d => ({uid: d.id, ...d.data()})); sync("conectado"); redesenha(); }, falha));
+    unsubs.push(db.collection("grupos").onSnapshot(s => { GRP = {}; s.docs.forEach(d => GRP[d.id] = {id: d.id, ...d.data()}); redesenha(); }, falha));
   });
 }
 function telaLogin(outraConta) {
@@ -477,7 +492,8 @@ function painel() {
         <td><b>${esc(e.g.nome)}</b><small>${e.g.enviado ? "confirmado" : "da planilha"}</small></td><td>${e.pessoas.length}<small>${nomes(e.g, e.pessoas).map(esc).join(", ")}</small></td>
         <td>${esc(e.voo)}<small>${dBR(e.dataVoo)} ${esc(e.horaVoo)}</small></td>
         <td><input value="${esc(e.g.local || "Hotel Tauá")}" data-loc="${esc(e.g.id)}" aria-label="Local de embarque"></td><td>${esc(e.g.enviado_por || "")}</td></tr>`).join("")}</tbody></table></div>`).join("") || `<p class="cap">Sem embarques. Carregue os dados da planilha abaixo.</p>`}
-    <div class="row"><button class="btn" id="csvE">Baixar embarques (CSV)</button></div>
+    <div class="row"><button class="btn" id="csvE">Baixar embarques (CSV)</button><button class="btn solid" id="csvP">Baixar pessoas (CSV)</button></div>
+    <p class="cap">“Baixar pessoas” é o arquivo da consolidação: <code>python cncg.py importar-retornos &lt;arquivo&gt; dd/mm</code> (mostra as mudanças; repita com <code>--gravar</code>).</p>
   </div>
   <div class="box"><h3>Situação dos grupos</h3><div class="tbl"><table><thead><tr><th>Grupo</th><th>Pessoas</th><th>Embarques</th><th>Situação</th><th>Responsável</th><th></th></tr></thead><tbody>
     ${lista.map(g => { const P = (g.pessoas || []).filter(p => p.situacao !== "retirado"); return `<tr><td><b>${esc(g.nome)}</b><small>${esc(g.tipo)}</small></td><td>${P.length}</td>
@@ -488,8 +504,10 @@ function painel() {
   <div class="box"><h3>Contatos <small>${ACESSOS.length} cadastro${ACESSOS.length === 1 ? "" : "s"}</small></h3>
     <div class="tbl"><table><thead><tr><th>Grupo</th><th>Nome</th><th>Telefone</th><th>Situação</th><th></th></tr></thead><tbody>
     ${ACESSOS.slice().sort((a, b) => (a.grupo_nome || "").localeCompare(b.grupo_nome || "")).map(a => `<tr><td>${esc(a.grupo_nome || a.grupo)}</td><td>${esc(a.nome)}<small>${esc(a.funcao)}</small></td><td>${esc(formatarTel(a.tel))}</td><td>${esc(a.situacao)}</td>
-      <td>${a.situacao === "liberado" ? `<button class="btn sm ghost" data-rec="${esc(a.uid)}">Revogar</button>` : a.situacao === "recusado" ? `<button class="btn sm ghost" data-lib="${esc(a.uid)}">Liberar</button>` : ""}</td></tr>`).join("")}
+      <td><div class="row">${a.situacao === "liberado" ? `<button class="btn sm ghost" data-rec="${esc(a.uid)}">Revogar</button>` : a.situacao === "recusado" ? `<button class="btn sm ghost" data-lib="${esc(a.uid)}">Liberar</button>` : ""}
+        <button class="btn sm ${confirmaExcluir === a.uid ? "solid" : "ghost"}" data-exc="${esc(a.uid)}">${confirmaExcluir === a.uid ? "Confirmar exclusão" : "Excluir cadastro"}</button></div></td></tr>`).join("")}
     </tbody></table></div>
+    <p class="cap">Excluir cadastro apaga o contato de vez (use para testes). Revogar só tira o acesso e mantém o contato.</p>
     <div class="row"><button class="btn" id="csvC">Baixar contatos (CSV)</button></div></div>
   <div class="box"><h3>Carregar dados da planilha</h3>
     <p class="cap">Escolha o arquivo <b>_carga_retornos.json</b> (pasta MISSOES_VIATURAS). ⚠ Atinge <b>todos</b> os grupos que ainda não enviaram (inclusive quem está no meio do preenchimento). Os que já enviaram não mudam. Para um grupo só, use “Recarregar da planilha” no Ver detalhes.</p>
@@ -509,6 +527,44 @@ function painel() {
     ...ACESSOS.map(a => [a.grupo_nome || a.grupo, a.tipo, a.nome, a.funcao, formatarTel(a.tel), a.situacao, hhmm(a.pedido_em)])]);
   $("#carga").onchange = ev => carregarArquivo(ev.target.files[0]);
   document.querySelectorAll("[data-det]").forEach(b => b.onclick = () => { const id = b.dataset.det; ABERTOS.has(id) ? ABERTOS.delete(id) : ABERTOS.add(id); painel(); });
+  $("#csvP").onclick = () => {
+    const L = [["grupo_id", "grupo", "tipo", "enviado", "pessoa_id", "nome", "funcao", "voo", "data_voo", "hora_voo", "viatura", "situacao", "data_viatura", "hora_viatura", "local"]];
+    Object.values(GRP).forEach(g => { const pe = embDaPessoa(montarEmbarques(g.pessoas || [], g.horas || {}));
+      (g.pessoas || []).forEach(p => { const e = pe[p.id];
+        L.push([g.id, g.nome, g.tipo, g.enviado ? "sim" : "nao", p.id, p.nome, p.funcao || "", p.voo || "", p.data || "", p.hora || "", p.viatura === false ? "nao" : "sim", p.situacao || "", e ? e.data : "", e ? e.hora : "", g.local || "Hotel Tauá"]); }); });
+    baixar(`pessoas_retorno_cncg_${new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "")}.csv`, L);
+  };
+  document.querySelectorAll("[data-exc]").forEach(b => b.onclick = async () => {
+    const uid = b.dataset.exc;
+    if (confirmaExcluir !== uid) { confirmaExcluir = uid; return painel(); }
+    confirmaExcluir = ""; b.disabled = true;
+    try { await db.doc("acessos/" + uid).delete(); toast("Cadastro excluído"); } catch (e) { toast("Erro ao excluir (" + (e.code || e.message) + ")"); painel(); }
+  });
+  const fimEdit = () => { EDIT = null; adiado = false; painel(); };
+  document.querySelectorAll("[data-ed]").forEach(b => b.onclick = () => { const [gid, pid] = b.dataset.ed.split("|"); EDIT = {gid, pid}; painel(); });
+  document.querySelectorAll("[data-incl]").forEach(b => b.onclick = () => { EDIT = {gid: b.dataset.incl, pid: ""}; painel(); });
+  document.querySelectorAll("[data-cancelar-chefia]").forEach(b => b.onclick = fimEdit);
+  const gravaPessoa = async (gid, muda) => {
+    const ref = db.doc("grupos/" + gid);
+    await db.runTransaction(async t => { const s = await t.get(ref); const d = s.data(); const P = (d.pessoas || []).map(x => ({...x}));
+      muda(P);
+      t.update(ref, {pessoas: P, enviado: true, enviado_por: d.enviado_por || "Chefia de Transportes", atualizado_em: ts()}); });
+  };
+  document.querySelectorAll("[data-ret]").forEach(b => b.onclick = async () => { const [gid, pid] = b.dataset.ret.split("|"); b.disabled = true;
+    try { await gravaPessoa(gid, P => { const p = P.find(x => x.id === pid); if (p) p.situacao = p.situacao === "retirado" ? "editado" : "retirado"; }); }
+    catch (e) { toast("Erro (" + (e.code || e.message) + ")"); painel(); } });
+  document.querySelectorAll("[data-salvar-chefia]").forEach(b => b.onclick = async () => {
+    const box = b.closest("[data-form]"), v = k => box.querySelector(`[data-f="${k}"]`).value.trim();
+    const dados = {nome: v("nome"), funcao: v("funcao"), voo: v("voo").toUpperCase(), data: v("data"), hora: v("hora"), viatura: box.querySelector('[data-f="viatura"]').checked};
+    if (dados.nome.length < 3) return toast("Informe o nome.");
+    if ((dados.voo || dados.data || dados.hora) && !(dados.voo && dados.data && dados.hora)) return toast("Informe voo, data e hora juntos.");
+    const gid = box.dataset.form, pid = box.dataset.pid; b.disabled = true;
+    try {
+      await gravaPessoa(gid, P => { if (pid) { const p = P.find(x => x.id === pid); Object.assign(p, dados); if (p.situacao !== "incluido") p.situacao = "editado"; }
+        else P.push({id: "c" + Date.now().toString(36), ...dados, situacao: "incluido"}); });
+      toast("Salvo pela Chefia"); fimEdit();
+    } catch (e) { b.disabled = false; toast("Erro ao salvar (" + (e.code || e.message) + ")"); }
+  });
   document.querySelectorAll("[data-cancela-recarga]").forEach(b => b.onclick = () => { confirmaRecarga = ""; painel(); });
   document.querySelectorAll("[data-recarga]").forEach(b => b.onclick = async () => {
     const id = b.dataset.recarga;
