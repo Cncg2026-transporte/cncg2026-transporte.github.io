@@ -317,6 +317,7 @@ function telaGrupo() {
       <dl><dt>Voo</dt><dd>${esc(e.voo)} · ${dBR(e.dataVoo)} · ${esc(e.horaVoo)}</dd><dt>Saída</dt><dd>${esc(G.local || "Hotel Tauá")}</dd>
       <dt>Destino</dt><dd>Aeroporto JPA 🔒</dd><dt>Quem vai</dt><dd>${e.pessoas.map(id => esc(nomeDe(id))).join("<br>")}</dd></dl>
       <span class="cap">Viatura no ${esc(G.local || "Hotel Tauá")} em ${dBR(e.data)} às</span><span class="hora">${esc(e.hora)}</span>
+      ${(G.transporte || {})[e.chave] ? `<div class="ajo" style="border-left-color:var(--with)">🚗 ${esc((G.transporte || {})[e.chave])}</div>` : ""}
       ${trav ? `<div class="ajo">🔒 Faltam menos de 6 h. Alterações só com a Chefia de Transportes: ${CHEFE}</div>` : `
       <div class="dupla"><div class="campo"><label>Ajustar data</label><input type="date" data-hd="${esc(e.chave)}" value="${esc(e.data)}"></div>
       <div class="campo"><label>Ajustar hora</label><input type="time" data-hh="${esc(e.chave)}" value="${esc(e.hora)}"></div></div>
@@ -423,7 +424,7 @@ function detalhes(g) {
     <p class="cap">${g.enviado ? `Enviado por <b>${esc(g.enviado_por || "")}</b>` : "Ainda não enviado"}${g.atualizado_em ? " · última gravação " + hhmm(g.atualizado_em) : ""}</p>
     ${P.length || (EDIT && EDIT.gid === g.id) ? `<table><thead><tr><th>Pessoa</th><th>Voo de retorno</th><th>Situação</th><th></th></tr></thead><tbody>${P.map(p => linhaPessoa(g.id, p)).join("")}${EDIT && EDIT.gid === g.id && EDIT.pid === "" ? formChefia(g.id, {}) : ""}</tbody></table>` : `<p class="cap">Nenhuma pessoa no grupo.</p>`}
     ${EDIT ? "" : `<button class="btn sm" style="justify-self:start" data-incl="${esc(g.id)}">+ Incluir pessoa (Chefia)</button>`}
-    ${E.length ? `<table><thead><tr><th>Viatura no local</th><th>Voo</th><th>Quem vai</th></tr></thead><tbody>${E.map(e => `<tr><td><b>${dBR(e.data)} ${esc(e.hora)}</b><small>${esc(g.local || "Hotel Tauá")}${e.sugerido ? " · sugerido" : ""}</small></td><td>${esc(e.voo)}<small>${dBR(e.dataVoo)} ${esc(e.horaVoo)}</small></td><td>${e.pessoas.map(id => esc(nome(id))).join("<br>")}</td></tr>`).join("")}</tbody></table>` : `<p class="cap">Sem embarques (ninguém com voo, data e hora).</p>`}
+    ${E.length ? `<table><thead><tr><th>Viatura no local</th><th>Voo</th><th>Quem vai</th><th>Viatura</th></tr></thead><tbody>${E.map(e => `<tr><td><b>${dBR(e.data)} ${esc(e.hora)}</b><small>${esc(g.local || "Hotel Tauá")}${e.sugerido ? " · sugerido" : ""}</small></td><td>${esc(e.voo)}<small>${dBR(e.dataVoo)} ${esc(e.horaVoo)}</small></td><td>${e.pessoas.map(id => esc(nome(id))).join("<br>")}</td><td>${esc((g.transporte || {})[e.chave] || "—")}</td></tr>`).join("")}</tbody></table>` : `<p class="cap">Sem embarques (ninguém com voo, data e hora).</p>`}
     <div class="row"><button class="btn sm ${confirmaRecarga === g.id && temCarga ? "solid" : "ghost"}" data-recarga="${esc(g.id)}">${confirmaRecarga === g.id && temCarga ? "Confirmar: substituir " + esc(g.nome) + " pela planilha" : "Recarregar da planilha (só este grupo)"}</button>
       ${confirmaRecarga === g.id && temCarga ? `<span class="cap">Apaga o que este grupo enviou e volta à lista da planilha. Os demais grupos não mudam.</span><button class="btn sm ghost" data-cancela-recarga>Cancelar</button>` : ""}
       ${!temCarga ? `<span class="cap">Vai pedir o arquivo _carga_retornos (usa só este grupo).</span>` : ""}</div>
@@ -487,11 +488,11 @@ function painel() {
       <div class="row"><button class="btn sm solid" data-lib="${esc(a.uid)}">Liberar</button><button class="btn sm ghost" data-rec="${esc(a.uid)}">Recusar</button></div></div>`).join("") : `<p class="cap">Nenhum pedido aguardando.</p>`}
   </div>
   <div class="box"><h3>Embarques por dia <small>${E.length} embarque${E.length === 1 ? "" : "s"}</small></h3>
-    ${dias.map(d => `<p class="dia-t">${dBR(d)}</p><div class="tbl"><table><thead><tr><th>Viatura no local</th><th>Grupo</th><th>Pessoas</th><th>Voo</th><th>Local</th><th>Contato</th></tr></thead><tbody>
+    ${dias.map(d => `<p class="dia-t">${dBR(d)}</p><div class="tbl"><table><thead><tr><th>Viatura no local</th><th>Grupo</th><th>Pessoas</th><th>Voo</th><th>Local</th><th>Contato</th><th>Viatura / Motorista</th></tr></thead><tbody>
       ${E.filter(e => e.data === d).map(e => `<tr><td><input type="time" value="${esc(e.hora)}" data-eh="${esc(e.g.id)}|${esc(e.chave)}" aria-label="Hora da viatura"> ${e.sugerido ? "<small>sugerido</small>" : ""}${avisoApertado(e) ? `<small class="pend">apertado</small>` : ""}</td>
         <td><b>${esc(e.g.nome)}</b><small>${e.g.enviado ? "confirmado" : "da planilha"}</small></td><td>${e.pessoas.length}<small>${nomes(e.g, e.pessoas).map(esc).join(", ")}</small></td>
         <td>${esc(e.voo)}<small>${dBR(e.dataVoo)} ${esc(e.horaVoo)}</small></td>
-        <td><input value="${esc(e.g.local || "Hotel Tauá")}" data-loc="${esc(e.g.id)}" aria-label="Local de embarque"></td><td>${esc(e.g.enviado_por || "")}</td></tr>`).join("")}</tbody></table></div>`).join("") || `<p class="cap">Sem embarques. Carregue os dados da planilha abaixo.</p>`}
+        <td><input value="${esc(e.g.local || "Hotel Tauá")}" data-loc="${esc(e.g.id)}" aria-label="Local de embarque"></td><td>${esc(e.g.enviado_por || "")}</td><td><input value="${esc((e.g.transporte || {})[e.chave] || "")}" data-tv="${esc(e.g.id)}|${esc(e.chave)}" placeholder="Viatura · Motorista" style="min-width:180px"></td></tr>`).join("")}</tbody></table></div>`).join("") || `<p class="cap">Sem embarques. Carregue os dados da planilha abaixo.</p>`}
     <div class="row"><button class="btn" id="csvE">Baixar embarques (CSV)</button><button class="btn solid" id="csvP">Baixar pessoas (CSV)</button></div>
     <p class="cap">“Baixar pessoas” é o arquivo da consolidação: <code>python cncg.py importar-retornos &lt;arquivo&gt; dd/mm</code> (mostra as mudanças; repita com <code>--gravar</code>).</p>
   </div>
@@ -521,6 +522,7 @@ function painel() {
     await db.doc("grupos/" + gid).update(new firebase.firestore.FieldPath("horas", chave), {data: e.data, hora: i.value}); toast("Hora atualizada");
   });
   document.querySelectorAll("[data-loc]").forEach(i => i.onchange = async () => { if (i.value.trim()) { await db.doc("grupos/" + i.dataset.loc).update({local: i.value.trim()}); toast("Local atualizado"); } });
+  document.querySelectorAll("[data-tv]").forEach(i => i.onchange = async () => { const [gid, ...k] = i.dataset.tv.split("|"); const chave = k.join("|"); const val = i.value.trim(); await db.doc("grupos/" + gid).update(new firebase.firestore.FieldPath("transporte", chave), val || firebase.firestore.FieldValue.delete()); toast("Viatura atualizada"); });
   $("#csvE").onclick = () => baixar("embarques_retorno_cncg.csv", [["data_viatura", "hora_viatura", "local", "grupo", "pessoas", "nomes", "voo", "data_voo", "hora_voo", "situacao", "contato"],
     ...E.map(e => [dBR(e.data), e.hora, e.g.local || "Hotel Tauá", e.g.nome, e.pessoas.length, nomes(e.g, e.pessoas).join(", "), e.voo, dBR(e.dataVoo), e.horaVoo, e.g.enviado ? "confirmado" : "planilha", e.g.enviado_por || ""])]);
   $("#csvC").onclick = () => baixar("contatos_cncg_2026.csv", [["grupo", "tipo", "nome", "funcao", "telefone", "situacao", "pedido_em"],
