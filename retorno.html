@@ -193,19 +193,38 @@ const F = {tipo: "estado", grupo: "", outro: "", nome: "", funcao: FUNCOES[0], f
 let meu = null;          // documento acessos/{uid}
 let G = null;            // grupos/{id} no servidor
 let draft = null, lidoMs = 0, dirty = false, editando = null, incluindo = false, conflito = false;
+let tentouReacesso = false;
+
+function salvarAcesso() {
+  try { localStorage.setItem("cncg_acesso", JSON.stringify({uid: auth.currentUser.uid, tel: meu.tel, grupo: meu.grupo, grupo_nome: meu.grupo_nome, nome: meu.nome, funcao: meu.funcao, tipo: meu.tipo})); } catch (e) {}
+}
 
 function iniciarGrupo() {
   auth.onAuthStateChanged(async u => {
-    limpar();
+    limpar(); tentouReacesso = false;
     if (!u) { try { await auth.signInAnonymously() } catch (e) { erroTela("Não foi possível conectar (" + (e.code || e.message) + "). Tente de novo em instantes.") } return; }
     if (!u.isAnonymous) { sync("conectado como Chefia"); $("#app").innerHTML = `<div class="box"><p>Você está conectado como Chefia.</p><a class="btn solid" href="#chefia">Abrir o painel da Chefia</a></div>`; return; }
     unsubs.push(db.doc("acessos/" + u.uid).onSnapshot(s => {
       sync("conectado");
       meu = s.exists ? s.data() : null;
-      if (!meu) return telaPedido();
+      if (!meu) {
+        if (!tentouReacesso) {
+          let ant = null;
+          try { ant = JSON.parse(localStorage.getItem("cncg_acesso")); } catch (e) {}
+          if (ant && ant.uid && ant.uid !== u.uid && ant.tel) {
+            tentouReacesso = true; sync("reconectando…");
+            db.doc("acessos/" + u.uid).set({tipo: ant.tipo || "estado", grupo: ant.grupo, grupo_nome: ant.grupo_nome || "", nome: ant.nome || "", funcao: ant.funcao || "", tel: ant.tel, situacao: "liberado", pedido_em: ts(), acesso_anterior: ant.uid})
+              .catch(() => { try { localStorage.removeItem("cncg_acesso"); } catch (e) {} telaPedido(); });
+            $("#app").innerHTML = `<div class="box"><div class="espera"><div class="ic" aria-hidden="true">⏳</div><p>Reconectando…</p></div></div>`;
+            return;
+          }
+        }
+        try { localStorage.removeItem("cncg_acesso"); } catch (e) {}
+        return telaPedido();
+      }
       if (meu.situacao === "pendente") return telaEspera();
-      if (meu.situacao === "recusado") return telaRecusado();
-      if (meu.situacao === "liberado") return abrirGrupo(meu.grupo);
+      if (meu.situacao === "recusado") { try { localStorage.removeItem("cncg_acesso"); } catch (e) {} return telaRecusado(); }
+      if (meu.situacao === "liberado") { salvarAcesso(); return abrirGrupo(meu.grupo); }
     }, e => erroTela("Sem acesso ao servidor (" + e.code + ").")));
   });
 }
@@ -463,7 +482,8 @@ function situacaoGrupo(g) {
   if (g.tipo === "outro" || (g.tipo === "senasp" && !P.length)) return `<span class="pend">Grupo novo</span>`;
   return `<span class="mut">Sem resposta</span>`;
 }
-function contatosDe(gid) { return ACESSOS.filter(a => a.grupo === gid && a.situacao === "liberado").map(a => `${esc(a.nome)} <small>${esc(a.funcao)} · ${esc(formatarTel(a.tel))}</small>`).join(""); }
+function acessosAtivos() { const sup = new Set(ACESSOS.filter(a => a.acesso_anterior).map(a => a.acesso_anterior)); return ACESSOS.filter(a => !sup.has(a.uid)); }
+function contatosDe(gid) { return acessosAtivos().filter(a => a.grupo === gid && a.situacao === "liberado").map(a => `${esc(a.nome)} <small>${esc(a.funcao)} · ${esc(formatarTel(a.tel))}</small>`).join(""); }
 function hhmm(t) { return t && t.toDate ? t.toDate().toLocaleString("pt-BR", {day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"}) : ""; }
 
 function todosEmbarques() {
@@ -474,7 +494,8 @@ function todosEmbarques() {
 }
 
 function painel() {
-  const pend = ACESSOS.filter(a => a.situacao === "pendente").sort((a, b) => (a.pedido_em?.toMillis() || 0) - (b.pedido_em?.toMillis() || 0));
+  const AA = acessosAtivos();
+  const pend = AA.filter(a => a.situacao === "pendente").sort((a, b) => (a.pedido_em?.toMillis() || 0) - (b.pedido_em?.toMillis() || 0));
   if (pendAnt >= 0 && pend.length > pendAnt) bipe();
   pendAnt = pend.length;
   document.title = (pend.length ? `(${pend.length}) pedido${pend.length > 1 ? "s" : ""} · ` : "") + "Retornos CNCG";
@@ -502,9 +523,9 @@ function painel() {
       <td>${g.ausente ? "" : `<button class="btn sm ghost" data-det="${esc(g.id)}">${ABERTOS.has(g.id) ? "Fechar" : "Ver detalhes"}</button>`}</td></tr>
       ${ABERTOS.has(g.id) && !g.ausente ? `<tr><td colspan="6">${detalhes(g)}</td></tr>` : ""}`; }).join("")}
   </tbody></table></div></div>
-  <div class="box"><h3>Contatos <small>${ACESSOS.length} cadastro${ACESSOS.length === 1 ? "" : "s"}</small></h3>
+  <div class="box"><h3>Contatos <small>${AA.length} cadastro${AA.length === 1 ? "" : "s"}</small></h3>
     <div class="tbl"><table><thead><tr><th>Grupo</th><th>Nome</th><th>Telefone</th><th>Situação</th><th></th></tr></thead><tbody>
-    ${ACESSOS.slice().sort((a, b) => (a.grupo_nome || "").localeCompare(b.grupo_nome || "")).map(a => `<tr><td>${esc(a.grupo_nome || a.grupo)}</td><td>${esc(a.nome)}<small>${esc(a.funcao)}</small></td><td>${esc(formatarTel(a.tel))}</td><td>${esc(a.situacao)}</td>
+    ${AA.slice().sort((a, b) => (a.grupo_nome || "").localeCompare(b.grupo_nome || "")).map(a => `<tr><td>${esc(a.grupo_nome || a.grupo)}</td><td>${esc(a.nome)}<small>${esc(a.funcao)}</small></td><td>${esc(formatarTel(a.tel))}</td><td>${esc(a.situacao)}${a.acesso_anterior ? " · reconex." : ""}</td>
       <td><div class="row">${a.situacao === "liberado" ? `<button class="btn sm ghost" data-rec="${esc(a.uid)}">Revogar</button>` : a.situacao === "recusado" ? `<button class="btn sm ghost" data-lib="${esc(a.uid)}">Liberar</button>` : ""}
         <button class="btn sm ${confirmaExcluir === a.uid ? "solid" : "ghost"}" data-exc="${esc(a.uid)}">${confirmaExcluir === a.uid ? "Confirmar exclusão" : "Excluir cadastro"}</button></div></td></tr>`).join("")}
     </tbody></table></div>
@@ -526,7 +547,7 @@ function painel() {
   $("#csvE").onclick = () => baixar("embarques_retorno_cncg.csv", [["data_viatura", "hora_viatura", "local", "grupo", "pessoas", "nomes", "voo", "data_voo", "hora_voo", "situacao", "contato"],
     ...E.map(e => [dBR(e.data), e.hora, e.g.local || "Hotel Tauá", e.g.nome, e.pessoas.length, nomes(e.g, e.pessoas).join(", "), e.voo, dBR(e.dataVoo), e.horaVoo, e.g.enviado ? "confirmado" : "planilha", e.g.enviado_por || ""])]);
   $("#csvC").onclick = () => baixar("contatos_cncg_2026.csv", [["grupo", "tipo", "nome", "funcao", "telefone", "situacao", "pedido_em"],
-    ...ACESSOS.map(a => [a.grupo_nome || a.grupo, a.tipo, a.nome, a.funcao, formatarTel(a.tel), a.situacao, hhmm(a.pedido_em)])]);
+    ...AA.map(a => [a.grupo_nome || a.grupo, a.tipo, a.nome, a.funcao, formatarTel(a.tel), a.situacao, hhmm(a.pedido_em)])]);
   $("#carga").onchange = ev => carregarArquivo(ev.target.files[0]);
   document.querySelectorAll("[data-det]").forEach(b => b.onclick = () => { const id = b.dataset.det; ABERTOS.has(id) ? ABERTOS.delete(id) : ABERTOS.add(id); painel(); });
   $("#csvP").onclick = () => {
