@@ -31,18 +31,17 @@ body{
   background:var(--bg);color:var(--fg);font-family:'Inter',system-ui,sans-serif;
   font-size:15px;line-height:1.55;padding:0;-webkit-font-smoothing:antialiased;
 }
-.hero{
-  background:linear-gradient(135deg,#0B1D3A 0%,#163562 100%);color:#fff;
-  padding:36px 20px 32px;text-align:center;
-}
-@media(prefers-color-scheme:dark){.hero{background:linear-gradient(135deg,#070E1A 0%,#0F2340 100%)}}
-.hero-badge{
-  display:inline-block;font-size:11px;font-weight:600;letter-spacing:.08em;
-  text-transform:uppercase;color:rgba(255,255,255,.6);
-  border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:3px 12px;margin-bottom:14px;
-}
-.hero h1{font-size:clamp(20px,5vw,28px);font-weight:700;line-height:1.2;margin-bottom:6px}
-.hero p{color:rgba(255,255,255,.55);font-size:13px;max-width:380px;margin:0 auto}
+.inst{background:#151515;color:#fff}
+.inst .inner{display:flex;align-items:center;gap:14px;padding:14px 16px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.inst img{width:52px;height:52px;flex:none}
+.inst .corp{display:grid;gap:1px;min-width:0}
+.inst .nome{font-weight:800;font-size:clamp(.78rem,2.5vw,1rem);line-height:1.2;letter-spacing:.02em;text-transform:uppercase}
+.inst .sub{font-weight:500;font-size:.76rem;opacity:.78;letter-spacing:.04em}
+.livery{height:14px;background:linear-gradient(104deg,#151515 0 38%,#DD3333 38% 71%,transparent 71% 72.5%,#DD3333 72.5% 77%,transparent 77% 78.5%,#DD3333 78.5% 80%,#151515 80% 100%)}
+@media(max-width:400px){.livery{height:10px}}
+.stitle{text-align:center;padding:22px 16px 0}
+.stitle h1{font-size:clamp(18px,4.5vw,24px);font-weight:700;line-height:1.2;color:var(--fg)}
+.stitle p{color:var(--fgm);font-size:13px;margin-top:4px}
 .wrap{max-width:520px;margin:0 auto;padding:0 16px}
 .card{
   background:var(--bg2);border:1px solid var(--brd);border-radius:var(--r);
@@ -167,10 +166,22 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 </head>
 <body>
 
-<div class="hero">
-  <div class="hero-badge">Chefia de Transportes · PMPB</div>
-  <h1>Pesquisa de Satisfação</h1>
-  <p>CNCG 2026 &middot; Logística de Transporte &middot; João Pessoa/PB</p>
+<header class="inst">
+  <div class="inner">
+    <img src="brasao.png" alt="Brasão PMPB" width="52" height="52">
+    <div class="corp">
+      <span class="nome">Diretoria de Apoio Logístico — PMPB</span>
+      <span class="sub">Chefia de Transportes</span>
+    </div>
+  </div>
+</header>
+<div class="livery"></div>
+
+<div class="wrap">
+  <div class="stitle">
+    <h1>Pesquisa de Satisfação</h1>
+    <p>CNCG 2026 &middot; Logística de Transporte &middot; João Pessoa/PB</p>
+  </div>
 </div>
 
 <!-- FORM VIEW -->
@@ -271,7 +282,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
       </form>
     </div>
   </div>
-  <div class="footer">Polícia Militar da Paraíba &middot; Chefia de Transportes</div>
+  <div class="footer">Diretoria de Apoio Logístico &middot; PMPB &middot; Chefia de Transportes</div>
 </div>
 
 <!-- THANK YOU VIEW -->
@@ -284,7 +295,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
       a logística de transporte nas próximas missões.</p>
     </div>
   </div>
-  <div class="footer">Polícia Militar da Paraíba &middot; Chefia de Transportes</div>
+  <div class="footer">Diretoria de Apoio Logístico &middot; PMPB &middot; Chefia de Transportes</div>
 </div>
 
 <!-- RESULTS VIEW (CAP only) -->
@@ -294,7 +305,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
       <div class="loading"><div class="spinner"></div><br>Carregando respostas...</div>
     </div>
   </div>
-  <div class="footer">Polícia Militar da Paraíba &middot; Chefia de Transportes</div>
+  <div class="footer">Diretoria de Apoio Logístico &middot; PMPB &middot; Chefia de Transportes</div>
 </div>
 
 <!-- LOADING VIEW -->
