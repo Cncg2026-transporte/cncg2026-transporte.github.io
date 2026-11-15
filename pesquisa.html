@@ -32,11 +32,13 @@ body{
   font-size:15px;line-height:1.55;padding:0;-webkit-font-smoothing:antialiased;
 }
 .inst{background:#151515;color:#fff}
-.inst .inner{display:flex;align-items:center;gap:14px;padding:14px 16px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-.inst img{width:52px;height:52px;flex:none}
-.inst .corp{display:grid;gap:1px;min-width:0}
-.inst .nome{font-weight:800;font-size:clamp(.78rem,2.5vw,1rem);line-height:1.2;letter-spacing:.02em;text-transform:uppercase}
-.inst .sub{font-weight:500;font-size:.76rem;opacity:.78;letter-spacing:.04em}
+.inst .inner{display:flex;align-items:center;gap:12px;padding:14px 16px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.inst img.bz{height:50px;width:auto;flex:none}
+.inst img.bz-dal{height:54px}
+.inst .corp{flex:1;min-width:0;display:grid;gap:1px;text-align:center}
+.inst .nome{font-weight:800;font-size:clamp(.72rem,2.3vw,.95rem);line-height:1.2;letter-spacing:.01em;text-transform:uppercase}
+.inst .sub{font-weight:500;font-size:clamp(.68rem,2vw,.8rem);opacity:.8;letter-spacing:.03em}
+@media(max-width:380px){.inst img.bz{height:42px}.inst img.bz-dal{height:46px}}
 .livery{height:14px;background:linear-gradient(104deg,#151515 0 38%,#DD3333 38% 71%,transparent 71% 72.5%,#DD3333 72.5% 77%,transparent 77% 78.5%,#DD3333 78.5% 80%,#151515 80% 100%)}
 @media(max-width:400px){.livery{height:10px}}
 .stitle{text-align:center;padding:22px 16px 0}
@@ -168,11 +170,12 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 
 <header class="inst">
   <div class="inner">
-    <img src="brasao.png" alt="Brasão PMPB" width="52" height="52">
+    <img src="brasao.png" alt="Brasão PMPB" class="bz">
     <div class="corp">
-      <span class="nome">Diretoria de Apoio Logístico — PMPB</span>
-      <span class="sub">Chefia de Transportes</span>
+      <span class="nome">Polícia Militar do Estado da Paraíba — PMPB</span>
+      <span class="sub">Diretoria de Apoio Logístico — DAL</span>
     </div>
+    <img src="brasao_dal.png" alt="Brasão DAL" class="bz bz-dal">
   </div>
 </header>
 <div class="livery"></div>
@@ -180,7 +183,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 <div class="wrap">
   <div class="stitle">
     <h1>Pesquisa de Satisfação</h1>
-    <p>CNCG 2026 &middot; Logística de Transporte &middot; João Pessoa/PB</p>
+    <p>CNCG 2026 &middot; Avaliação Geral &middot; João Pessoa/PB</p>
   </div>
 </div>
 
@@ -189,79 +192,14 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
   <div class="card">
     <div class="card-body">
       <p class="intro">
-        Agradecemos sua presença no CNCG 2026. Para aprimorarmos nosso serviço
-        de transporte em futuras missões, solicitamos sua breve avaliação.
+        Agradecemos sua presença no CNCG 2026. Sua avaliação é <strong>anônima</strong> —
+        não é necessário se identificar. Basta marcar as estrelas e, se desejar,
+        deixar um comentário. Isso nos ajuda a aprimorar a organização em futuras missões.
       </p>
 
       <form id="surveyForm" onsubmit="return enviar(event)">
-        <label class="field">
-          <span class="lbl">Nome completo<span class="req">*</span></span>
-          <input type="text" id="fNome" required minlength="2" maxlength="120" autocomplete="name" placeholder="Seu nome" list="nomes">
-          <datalist id="nomes">
-<option value="CEL PM Edher"><option value="Kleison Jose Albuquerque"><option value="Maria Jose Correia">
-<option value="Fayane Maria Silva"><option value="Carlos Jose Santos"><option value="Patricia Ferreira Santos">
-<option value="Marcio Allan Assuncao"><option value="Eliete Tentes Assuncao"><option value="Jose Carlos Morais">
-<option value="Marcos Klinger Paiva"><option value="Iricleide Lima Carmo"><option value="Elton Rodrigues Calado">
-<option value="Antonio Carlos Magalhaes"><option value="Marcus Levi Borges"><option value="Sinval Da Silveira Sampaio">
-<option value="Leonardo Bezerra Tavares"><option value="Jackson Alves Araujo"><option value="Juvenildo Dos Santos Carneiro">
-<option value="Lidiani Moura Santos"><option value="Julie Ane Santos"><option value="Riodo Lopes Rubim">
-<option value="Renato Duarte Oliveira"><option value="Marcelo Granja"><option value="Juliana Borges Granja">
-<option value="Marcos Paulo Hosokawa"><option value="Nicolau Sauaia Junior"><option value="Edilson Fernando Junior">
-<option value="Claudio Fernando Tinoco"><option value="Seyla Rilcia Tinoco"><option value="Marcio Prestes">
-<option value="Claudia Regina Sousa"><option value="Renato Dos Anjos Garnes"><option value="Andreia Lutz Garnes">
-<option value="Jessica de Martins"><option value="Cleide Barcelos Rodrigues"><option value="Joaldo Rodrigues Almeida">
-<option value="Marieta Apgaua Marques"><option value="Sergio Ricardo Almeida"><option value="Marycelia Domingues Rodrigues">
-<option value="Klepler da Costa Lobo Neto"><option value="Jose Ronildo Silva"><option value="Adriana De Franca Campos">
-<option value="Almir Tavares Lima"><option value="Raphael Jose Felinto"><option value="Ivanildo Cesar Medeiros">
-<option value="Jose Xavier Neto"><option value="Scheiwann Scheleiden Silva"><option value="James Sean Almeida">
-<option value="Alarico Junior"><option value="Marcelo Augusto Queiroz"><option value="Jefferson Silva">
-<option value="Flavia Danielli Silva"><option value="Felipe Vicentini"><option value="Cilon Freitas Silva">
-<option value="Helena Beatriz Rower"><option value="Carlos Rafael Araujo"><option value="Valdeane Alves Oliveira">
-<option value="Janiomar de Teixeira"><option value="Valdirene Vieira"><option value="Allan Marques Bueno">
-<option value="Simone Franco Bueno"><option value="Luciano Yuzo Silva"><option value="Emerson Fernandes">
-<option value="Maria Claudia Faria"><option value="Edgar de Paris Neto"><option value="Ana Christina Duarte Nunes de Paris">
-<option value="Carlos Rolemberg"><option value="Rochely Favarin Justo"><option value="Meriele Santos Freitas">
-<option value="Francinaldo Machado Bo"><option value="Gleidistania Gomes Bo"><option value="Eduardo Pereira Silva">
-<option value="Voltaire Flamarion Diniz"><option value="Cleide Maria Silva"><option value="Wardivan Alves Araujo">
-<option value="Anderson Machado Padilha"><option value="Gabrielle Ferreira Dias"><option value="Fabricia Oliveira Flores">
-<option value="Aline Carvalho Jeronymo"><option value="Arua Giareta Montovani"><option value="Diogo Rodrigues Moreira">
-<option value="Djalma Romualdo Galvao"><option value="Marcio Batista Homem"><option value="Joao Moreira Sansone">
-<option value="Julia da Gama Sansone"><option value="Maria Sofia da Gama Sansone"><option value="Maria Zila Moreira Sansone">
-<option value="Rafael Cruz Gallego"><option value="Elaine Delfino Patricio"><option value="Stephano Diaz Cavalcante">
-<option value="Kauany Hemilli Banalli da Silveira"><option value="Fernando Gomes dos Santos"><option value="Mirian Pereira Silva">
-<option value="Lincoln Egydio Lopes"><option value="Rafael Viana da Costa"><option value="Victor Gallo">
-<option value="Leonardo Pinheiro"><option value="Edison Katsumi Endo"><option value="Marco Antonio Molina Fontella">
-<option value="Daniel Sanches Montemor"><option value="Sandro Luciano Caron de Moraes"><option value="Reinaldo Vinicius da Costa">
-<option value="Pythagoras Schroeder"><option value="Edecio Strama Filho"><option value="Roberta Melo Correa">
-<option value="Tatiane Menezes"><option value="Luis Carlos Fernandes"><option value="Alaor Valente">
-<option value="Elifas Holodniak"><option value="Monica Rios Helvadjian"><option value="Rubens Helvadjian">
-          </datalist>
-        </label>
-        <label class="field">
-          <span class="lbl">UF / Grupo<span class="req">*</span></span>
-          <select id="fUf" required>
-            <option value="">Selecione...</option>
-            <optgroup label="Unidades da Federação">
-              <option>AC</option><option>AL</option><option>AM</option><option>AP</option>
-              <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
-              <option>GO</option><option>MA</option><option>MG</option><option>MS</option>
-              <option>MT</option><option>PA</option><option>PB</option><option>PE</option>
-              <option>PI</option><option>PR</option><option>RJ</option><option>RN</option>
-              <option>RO</option><option>RR</option><option>RS</option><option>SC</option>
-              <option>SE</option><option>SP</option><option>TO</option>
-            </optgroup>
-            <optgroup label="Grupos">
-              <option value="Equipe CNCG">Equipe CNCG</option>
-              <option value="SENASP">SENASP</option>
-              <option value="Produção">Produção / Sansone</option>
-              <option value="Patrocinador">Patrocinador / Empresa</option>
-              <option value="Outro">Outro</option>
-            </optgroup>
-          </select>
-        </label>
-
         <div class="q-group">
-          <h3>Avaliação do transporte</h3>
+          <h3>Avaliação do evento</h3>
           <p style="font-size:12px;color:var(--fgl);margin-top:-8px;margin-bottom:12px">
             Toque nas estrelas para avaliar (1 a 5)
           </p>
@@ -292,7 +230,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
       <div class="thank-icon">✅</div>
       <h2>Avaliação enviada!</h2>
       <p>Agradecemos sua contribuição. Suas respostas nos ajudarão a aprimorar
-      a logística de transporte nas próximas missões.</p>
+      a organização das próximas missões.</p>
     </div>
   </div>
   <div class="footer">Diretoria de Apoio Logístico &middot; PMPB &middot; Chefia de Transportes</div>
@@ -321,16 +259,14 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 
 <script>
 const QUESTIONS = [
-  "Recepção no aeroporto (chegada)",
-  "Transporte aeroporto → hotel",
-  "Transporte hotel → aeroporto (retorno)",
-  "Atendimento do motorista",
-  "Conforto do veículo",
-  "Pontualidade",
-  "Passeio de sexta-feira (ônibus)",
-  "Passeio de sábado (ônibus)",
-  "Avaliação geral da logística"
+  "Logística de transporte",
+  "Hospedagem",
+  "Assistência à família",
+  "Solenidade de abertura",
+  "Jantar de encerramento",
+  "Passeio (Catamarã)"
 ];
+const NQ = QUESTIONS.length;
 const CAP_UID = "lWh4aPZKUCUg1Zd8ExwDEomMsWZ2";
 const FB_CFG = {apiKey:"AIzaSyCaAvi_O6SLQDw9dRwLeF-igf8S6MzUJ-s",authDomain:"cncg2026-central.firebaseapp.com",projectId:"cncg2026-central",storageBucket:"cncg2026-central.firebasestorage.app",messagingSenderId:"637143167679",appId:"1:637143167679:web:5e6ba52e7210b510924c0a"};
 
@@ -400,25 +336,10 @@ function showView(id) {
 
 async function enviar(e) {
   e.preventDefault();
-  const nome = document.getElementById("fNome").value.trim();
-  const uf = document.getElementById("fUf").value;
   const contrib = document.getElementById("fContrib").value.trim();
 
   let ok = true;
-  if (!nome || nome.length < 2) {
-    document.getElementById("fNome").classList.add("field-err");
-    ok = false;
-  } else {
-    document.getElementById("fNome").classList.remove("field-err");
-  }
-  if (!uf) {
-    document.getElementById("fUf").classList.add("field-err");
-    ok = false;
-  } else {
-    document.getElementById("fUf").classList.remove("field-err");
-  }
-
-  for (let i = 1; i <= 9; i++) {
+  for (let i = 1; i <= NQ; i++) {
     const k = "r" + i;
     if (!ratings[k] || ratings[k] < 1) {
       document.getElementById("qi_" + k).classList.add("invalid");
@@ -427,7 +348,7 @@ async function enviar(e) {
   }
 
   if (!ok) {
-    toast("Preencha todos os campos obrigatórios");
+    toast("Marque as estrelas de todos os itens");
     return false;
   }
 
@@ -436,8 +357,9 @@ async function enviar(e) {
   btn.innerHTML = '<div class="spinner" style="width:18px;height:18px;border-width:2px;margin:0"></div> Enviando...';
 
   try {
-    const data = { nome, uf, contribuicoes: contrib, respondido_em: firebase.firestore.FieldValue.serverTimestamp() };
-    for (let i = 1; i <= 9; i++) data["r" + i] = ratings["r" + i];
+    const data = { respondido_em: firebase.firestore.FieldValue.serverTimestamp() };
+    for (let i = 1; i <= NQ; i++) data["r" + i] = ratings["r" + i];
+    if (contrib) data.contribuicoes = contrib;
 
     await db.collection("pesquisa").doc(uid).set(data);
     try { localStorage.setItem("cncg_pesquisa_ok", "1"); } catch {}
@@ -465,25 +387,40 @@ async function carregarResultados() {
     }
 
     const docs = [];
-    snap.forEach(d => docs.push(d.data()));
+    snap.forEach(d => docs.push({ id: d.id, ...d.data() }));
     const n = docs.length;
 
+    // Reconhecimento velado: cruza o UID da resposta com a coleção de acessos (retorno)
+    const conhecidos = {};
+    try {
+      const acc = await db.collection("acessos").get();
+      acc.forEach(a => {
+        const d = a.data();
+        conhecidos[a.id] = { nome: d.nome || "", grupo: d.grupo_nome || d.grupo || "" };
+      });
+    } catch {}
+    conhecidos[CAP_UID] = { nome: "CAP Fernandes (admin)", grupo: "DAL/2" };
+    const idDe = id => conhecidos[id] || null;
+    const nReconhecidos = docs.filter(d => idDe(d.id)).length;
+
     const medias = [];
-    for (let i = 1; i <= 9; i++) {
+    for (let i = 1; i <= NQ; i++) {
       const k = "r" + i;
       const soma = docs.reduce((s, d) => s + (d[k] || 0), 0);
       medias.push({ q: QUESTIONS[i - 1], avg: soma / n });
     }
-    const geral = medias.reduce((s, m) => s + m.avg, 0) / 9;
+    const geral = medias.reduce((s, m) => s + m.avg, 0) / NQ;
 
-    const contribs = docs.filter(d => d.contribuicoes && d.contribuicoes.trim()).map(d => ({
-      texto: d.contribuicoes.trim(),
-      nome: d.nome || "Anônimo",
-      uf: d.uf || ""
-    }));
+    const contribs = docs.filter(d => d.contribuicoes && d.contribuicoes.trim()).map(d => {
+      const c = idDe(d.id);
+      return {
+        texto: d.contribuicoes.trim(),
+        quem: c ? (c.nome + (c.grupo ? " · " + c.grupo : "")) : "Anônimo"
+      };
+    });
 
     let html = `<div class="res-title">Resultados da Pesquisa</div>
-      <div class="res-sub">${n} resposta${n !== 1 ? "s" : ""} recebida${n !== 1 ? "s" : ""}</div>
+      <div class="res-sub">${n} resposta${n !== 1 ? "s" : ""} &middot; ${nReconhecidos} com ID reconhecido</div>
       <div style="text-align:center;margin-bottom:18px">
         <div style="font-size:12px;color:var(--fgm);margin-bottom:4px">MÉDIA GERAL</div>
         <div class="res-badge">${geral.toFixed(1)}</div>
@@ -500,7 +437,7 @@ async function carregarResultados() {
     if (contribs.length) {
       html += '<div class="res-contribs"><h4>Contribuições para melhoria</h4>';
       html += contribs.map(c =>
-        `<div class="contrib-item">${esc(c.texto)}<div class="contrib-meta">${esc(c.nome)} · ${esc(c.uf)}</div></div>`
+        `<div class="contrib-item">${esc(c.texto)}<div class="contrib-meta">${esc(c.quem)}</div></div>`
       ).join("");
       html += '</div>';
     }
@@ -578,8 +515,6 @@ async function init() {
 
     showView("viewForm");
     renderQuestions();
-    const p = new URLSearchParams(location.search);
-    if (p.get("nome")) document.getElementById("fNome").value = p.get("nome");
   });
 }
 
