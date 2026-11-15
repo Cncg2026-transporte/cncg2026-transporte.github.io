@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pesquisa de Satisfação · CNCG 2026</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+*{box-sizing:border-box;margin:0}
+:root{
+  --bg:#F2F5F8;--bg2:#FFFFFF;--fg:#1A2332;--fgm:#5A6678;--fgl:#8A95A5;
+  --pri:#0B1D3A;--acc:#1B5EB8;--acc2:#E8F0FB;--acch:#164A94;
+  --brd:#DDE2E8;--brdl:#EEF1F5;--ok:#0E7B4B;--okbg:#E6F7EE;
+  --star:#E8A838;--stare:#CDD3DB;--err:#C03030;--errbg:#FDE8E8;
+  --r:10px;--sh:0 1px 4px rgba(11,29,58,.07),0 2px 8px rgba(11,29,58,.04);
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#0D1117;--bg2:#161B22;--fg:#E0E4EA;--fgm:#8B95A5;--fgl:#545E6E;
+    --pri:#0A1628;--acc:#4A90E2;--acc2:#172A45;--acch:#5DA2F5;
+    --brd:#262E38;--brdl:#1C2430;--ok:#34C07A;--okbg:#0E2A1A;
+    --star:#F0B848;--stare:#2A3240;--err:#E06060;--errbg:#2A1010;
+    color-scheme:dark;
+  }
+}
+body{
+  background:var(--bg);color:var(--fg);font-family:'Inter',system-ui,sans-serif;
+  font-size:15px;line-height:1.55;padding:0;-webkit-font-smoothing:antialiased;
+}
+.hero{
+  background:linear-gradient(135deg,#0B1D3A 0%,#163562 100%);color:#fff;
+  padding:36px 20px 32px;text-align:center;
+}
+@media(prefers-color-scheme:dark){.hero{background:linear-gradient(135deg,#070E1A 0%,#0F2340 100%)}}
+.hero-badge{
+  display:inline-block;font-size:11px;font-weight:600;letter-spacing:.08em;
+  text-transform:uppercase;color:rgba(255,255,255,.6);
+  border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:3px 12px;margin-bottom:14px;
+}
+.hero h1{font-size:clamp(20px,5vw,28px);font-weight:700;line-height:1.2;margin-bottom:6px}
+.hero p{color:rgba(255,255,255,.55);font-size:13px;max-width:380px;margin:0 auto}
+.wrap{max-width:520px;margin:0 auto;padding:0 16px}
+.card{
+  background:var(--bg2);border:1px solid var(--brd);border-radius:var(--r);
+  box-shadow:var(--sh);margin-top:20px;overflow:hidden;
+}
+.card-body{padding:20px}
+.intro{font-size:14px;color:var(--fgm);line-height:1.6;text-align:center}
+
+/* Form fields */
+label.field{display:block;margin-top:18px}
+label.field .lbl{font-size:13px;font-weight:600;margin-bottom:5px;display:block}
+label.field .req{color:var(--err);margin-left:2px}
+input[type=text],select,textarea{
+  width:100%;padding:10px 12px;border:1px solid var(--brd);border-radius:8px;
+  background:var(--bg);color:var(--fg);font-family:inherit;font-size:14px;
+  outline:none;transition:border-color .15s;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--acc)}
+textarea{resize:vertical;min-height:80px}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235A6678' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+
+/* Star ratings */
+.q-group{margin-top:22px}
+.q-group h3{font-size:14px;font-weight:600;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--brdl)}
+.q-item{
+  display:flex;align-items:center;gap:10px;padding:10px 0;
+  border-bottom:1px solid var(--brdl);
+}
+.q-item:last-child{border-bottom:none}
+.q-num{
+  flex-shrink:0;width:24px;height:24px;display:flex;align-items:center;justify-content:center;
+  background:var(--acc2);color:var(--acc);font-size:11px;font-weight:700;
+  border-radius:50%;font-variant-numeric:tabular-nums;
+}
+.q-text{flex:1;min-width:0;font-size:13px;line-height:1.4}
+.stars{flex-shrink:0;display:flex;gap:2px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.stars svg{
+  width:28px;height:28px;color:var(--stare);transition:color .12s,transform .12s;
+}
+.stars svg.on{color:var(--star)}
+.stars svg:active{transform:scale(1.15)}
+.q-item.invalid .stars svg{color:var(--err)}
+
+/* Error states */
+.field-err{border-color:var(--err)!important}
+.err-msg{font-size:12px;color:var(--err);margin-top:4px;display:none}
+.err-msg.show{display:block}
+
+/* Submit */
+.submit-wrap{margin-top:24px;text-align:center;padding-bottom:4px}
+.btn-submit{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:12px 36px;border:none;border-radius:8px;
+  background:var(--acc);color:#fff;font-family:inherit;font-size:15px;font-weight:600;
+  cursor:pointer;transition:background .15s,transform .1s;
+}
+.btn-submit:hover{background:var(--acch)}
+.btn-submit:active{transform:scale(.97)}
+.btn-submit:disabled{opacity:.5;cursor:not-allowed}
+
+/* Thank you */
+.thank{text-align:center;padding:48px 20px 56px}
+.thank-icon{font-size:48px;margin-bottom:16px}
+.thank h2{font-size:22px;font-weight:700;margin-bottom:8px}
+.thank p{color:var(--fgm);font-size:14px;max-width:360px;margin:0 auto;line-height:1.6}
+
+/* Results panel */
+.res-title{font-size:18px;font-weight:700;margin-bottom:4px}
+.res-sub{font-size:13px;color:var(--fgm);margin-bottom:18px}
+.res-stat{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--brdl)}
+.res-stat:last-child{border-bottom:none}
+.res-stat .qlabel{flex:1;min-width:0;font-size:13px}
+.res-bar-wrap{width:100px;height:8px;background:var(--brdl);border-radius:4px;overflow:hidden;flex-shrink:0}
+.res-bar{height:100%;background:var(--acc);border-radius:4px;transition:width .4s ease}
+.res-avg{flex-shrink:0;width:36px;text-align:right;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+.res-badge{
+  display:inline-block;background:var(--acc2);color:var(--acc);
+  font-size:24px;font-weight:700;border-radius:8px;padding:8px 16px;margin-bottom:16px;
+  font-variant-numeric:tabular-nums;
+}
+.res-contribs{margin-top:18px}
+.res-contribs h4{font-size:14px;font-weight:600;margin-bottom:10px}
+.contrib-item{
+  background:var(--bg);border-radius:8px;padding:12px 14px;margin-bottom:8px;
+  font-size:13px;line-height:1.5;
+}
+.contrib-meta{font-size:11px;color:var(--fgl);margin-top:4px}
+.res-empty{text-align:center;color:var(--fgm);padding:32px 0;font-size:14px}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:var(--ok);color:#fff;padding:10px 20px;border-radius:8px;
+  font-size:14px;font-weight:500;z-index:99;opacity:0;transition:opacity .3s;
+  pointer-events:none;
+}
+.toast.show{opacity:1}
+
+/* Loading */
+.loading{text-align:center;padding:40px 0;color:var(--fgm);font-size:14px}
+.spinner{
+  display:inline-block;width:24px;height:24px;
+  border:3px solid var(--brdl);border-top-color:var(--acc);
+  border-radius:50%;animation:spin .7s linear infinite;margin-bottom:8px;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.footer{text-align:center;padding:24px 0 36px;color:var(--fgl);font-size:11px}
+
+.btn-clean{
+  margin-top:12px;padding:8px 16px;border:1px solid var(--err);border-radius:6px;
+  background:transparent;color:var(--err);font-family:inherit;font-size:12px;cursor:pointer;
+}
+.btn-clean:hover{background:var(--errbg)}
+
+/* Responsive */
+@media(max-width:400px){
+  .q-item{flex-wrap:wrap}
+  .stars{width:100%;justify-content:flex-end}
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-badge">Chefia de Transportes · PMPB</div>
+  <h1>Pesquisa de Satisfação</h1>
+  <p>CNCG 2026 &middot; Logística de Transporte &middot; João Pessoa/PB</p>
+</div>
+
+<!-- FORM VIEW -->
+<div class="wrap" id="viewForm">
+  <div class="card">
+    <div class="card-body">
+      <p class="intro">
+        Agradecemos sua presença no CNCG 2026. Para aprimorarmos nosso serviço
+        de transporte em futuras missões, solicitamos sua breve avaliação.
+      </p>
+
+      <form id="surveyForm" onsubmit="return enviar(event)">
+        <label class="field">
+          <span class="lbl">Nome completo<span class="req">*</span></span>
+          <input type="text" id="fNome" required minlength="2" maxlength="120" autocomplete="name" placeholder="Seu nome">
+        </label>
+        <label class="field">
+          <span class="lbl">UF / Grupo<span class="req">*</span></span>
+          <select id="fUf" required>
+            <option value="">Selecione...</option>
+            <optgroup label="Unidades da Federação">
+              <option>AC</option><option>AL</option><option>AM</option><option>AP</option>
+              <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
+              <option>GO</option><option>MA</option><option>MG</option><option>MS</option>
+              <option>MT</option><option>PA</option><option>PB</option><option>PE</option>
+              <option>PI</option><option>PR</option><option>RJ</option><option>RN</option>
+              <option>RO</option><option>RR</option><option>RS</option><option>SC</option>
+              <option>SE</option><option>SP</option><option>TO</option>
+            </optgroup>
+            <optgroup label="Grupos">
+              <option value="Equipe CNCG">Equipe CNCG</option>
+              <option value="SENASP">SENASP</option>
+              <option value="Produção">Produção / Sansone</option>
+              <option value="Patrocinador">Patrocinador / Empresa</option>
+              <option value="Outro">Outro</option>
+            </optgroup>
+          </select>
+        </label>
+
+        <div class="q-group">
+          <h3>Avaliação do transporte</h3>
+          <p style="font-size:12px;color:var(--fgl);margin-top:-8px;margin-bottom:12px">
+            Toque nas estrelas para avaliar (1 a 5)
+          </p>
+          <div id="questions"></div>
+        </div>
+
+        <label class="field" style="margin-top:22px">
+          <span class="lbl">Contribuições para melhoria</span>
+          <textarea id="fContrib" maxlength="2000" placeholder="Sugestão, elogio ou crítica construtiva (opcional)"></textarea>
+        </label>
+
+        <div class="submit-wrap">
+          <button type="submit" class="btn-submit" id="btnSubmit">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+            Enviar avaliação
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div class="footer">Polícia Militar da Paraíba &middot; Chefia de Transportes</div>
+</div>
+
+<!-- THANK YOU VIEW -->
+<div class="wrap" id="viewThank" hidden>
+  <div class="card">
+    <div class="thank">
+      <div class="thank-icon">✅</div>
+      <h2>Avaliação enviada!</h2>
+      <p>Agradecemos sua contribuição. Suas respostas nos ajudarão a aprimorar
+      a logística de transporte nas próximas missões.</p>
+    </div>
+  </div>
+  <div class="footer">Polícia Militar da Paraíba &middot; Chefia de Transportes</div>
+</div>
+
+<!-- RESULTS VIEW (CAP only) -->
+<div class="wrap" id="viewResults" hidden>
+  <div class="card">
+    <div class="card-body" id="resultsBody">
+      <div class="loading"><div class="spinner"></div><br>Carregando respostas...</div>
+    </div>
+  </div>
+  <div class="footer">Polícia Militar da Paraíba &middot; Chefia de Transportes</div>
+</div>
+
+<!-- LOADING VIEW -->
+<div class="wrap" id="viewLoading">
+  <div class="card">
+    <div class="card-body">
+      <div class="loading"><div class="spinner"></div><br>Conectando...</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const QUESTIONS = [
+  "Recepção no aeroporto (chegada)",
+  "Transporte aeroporto → hotel",
+  "Transporte hotel → aeroporto (retorno)",
+  "Atendimento do motorista",
+  "Conforto do veículo",
+  "Pontualidade",
+  "Passeio de sexta-feira (ônibus)",
+  "Passeio de sábado (ônibus)",
+  "Avaliação geral da logística"
+];
+const CAP_UID = "lWh4aPZKUCUg1Zd8ExwDEomMsWZ2";
+const FB_CFG = {apiKey:"AIzaSyCaAvi_O6SLQDw9dRwLeF-igf8S6MzUJ-s",authDomain:"cncg2026-central.firebaseapp.com",projectId:"cncg2026-central",storageBucket:"cncg2026-central.firebasestorage.app",messagingSenderId:"637143167679",appId:"1:637143167679:web:5e6ba52e7210b510924c0a"};
+
+let db, auth, uid = null;
+const ratings = {};
+
+function starSvg() {
+  return '<svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+}
+
+function renderQuestions() {
+  const el = document.getElementById("questions");
+  el.innerHTML = QUESTIONS.map((q, i) => {
+    const k = "r" + (i + 1);
+    ratings[k] = 0;
+    return `<div class="q-item" id="qi_${k}">
+      <div class="q-num">${i + 1}</div>
+      <div class="q-text">${q}</div>
+      <div class="stars" data-key="${k}">
+        ${[1,2,3,4,5].map(s => `<span data-v="${s}">${starSvg()}</span>`).join("")}
+      </div>
+    </div>`;
+  }).join("");
+
+  el.querySelectorAll(".stars").forEach(group => {
+    const spans = group.querySelectorAll("span");
+    const key = group.dataset.key;
+    spans.forEach(sp => {
+      sp.addEventListener("click", () => {
+        const v = parseInt(sp.dataset.v);
+        ratings[key] = v;
+        group.closest(".q-item").classList.remove("invalid");
+        updateStars(group, v);
+      });
+    });
+  });
+}
+
+function updateStars(group, val) {
+  group.querySelectorAll("span svg").forEach((svg, i) => {
+    if (i < val) {
+      svg.classList.add("on");
+      svg.setAttribute("fill", "currentColor");
+      svg.setAttribute("stroke", "none");
+    } else {
+      svg.classList.remove("on");
+      svg.setAttribute("fill", "none");
+      svg.setAttribute("stroke", "currentColor");
+      svg.setAttribute("stroke-width", "1.5");
+    }
+  });
+}
+
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2500);
+}
+
+function showView(id) {
+  ["viewForm","viewThank","viewResults","viewLoading"].forEach(v => {
+    document.getElementById(v).hidden = v !== id;
+  });
+}
+
+async function enviar(e) {
+  e.preventDefault();
+  const nome = document.getElementById("fNome").value.trim();
+  const uf = document.getElementById("fUf").value;
+  const contrib = document.getElementById("fContrib").value.trim();
+
+  let ok = true;
+  if (!nome || nome.length < 2) {
+    document.getElementById("fNome").classList.add("field-err");
+    ok = false;
+  } else {
+    document.getElementById("fNome").classList.remove("field-err");
+  }
+  if (!uf) {
+    document.getElementById("fUf").classList.add("field-err");
+    ok = false;
+  } else {
+    document.getElementById("fUf").classList.remove("field-err");
+  }
+
+  for (let i = 1; i <= 9; i++) {
+    const k = "r" + i;
+    if (!ratings[k] || ratings[k] < 1) {
+      document.getElementById("qi_" + k).classList.add("invalid");
+      ok = false;
+    }
+  }
+
+  if (!ok) {
+    toast("Preencha todos os campos obrigatórios");
+    return false;
+  }
+
+  const btn = document.getElementById("btnSubmit");
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="width:18px;height:18px;border-width:2px;margin:0"></div> Enviando...';
+
+  try {
+    const data = { nome, uf, contribuicoes: contrib, respondido_em: firebase.firestore.FieldValue.serverTimestamp() };
+    for (let i = 1; i <= 9; i++) data["r" + i] = ratings["r" + i];
+
+    await db.collection("pesquisa").doc(uid).set(data);
+    try { localStorage.setItem("cncg_pesquisa_ok", "1"); } catch {}
+    showView("viewThank");
+  } catch (err) {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg> Enviar avaliação';
+    if (err.code === "permission-denied") {
+      toast("Você já enviou uma avaliação anteriormente");
+      showView("viewThank");
+    } else {
+      toast("Erro ao enviar. Tente novamente.");
+      console.error(err);
+    }
+  }
+  return false;
+}
+
+async function carregarResultados() {
+  try {
+    const snap = await db.collection("pesquisa").get();
+    if (snap.empty) {
+      document.getElementById("resultsBody").innerHTML = '<div class="res-empty">Nenhuma resposta recebida ainda.</div>';
+      return;
+    }
+
+    const docs = [];
+    snap.forEach(d => docs.push(d.data()));
+    const n = docs.length;
+
+    const medias = [];
+    for (let i = 1; i <= 9; i++) {
+      const k = "r" + i;
+      const soma = docs.reduce((s, d) => s + (d[k] || 0), 0);
+      medias.push({ q: QUESTIONS[i - 1], avg: soma / n });
+    }
+    const geral = medias.reduce((s, m) => s + m.avg, 0) / 9;
+
+    const contribs = docs.filter(d => d.contribuicoes && d.contribuicoes.trim()).map(d => ({
+      texto: d.contribuicoes.trim(),
+      nome: d.nome || "Anônimo",
+      uf: d.uf || ""
+    }));
+
+    let html = `<div class="res-title">Resultados da Pesquisa</div>
+      <div class="res-sub">${n} resposta${n !== 1 ? "s" : ""} recebida${n !== 1 ? "s" : ""}</div>
+      <div style="text-align:center;margin-bottom:18px">
+        <div style="font-size:12px;color:var(--fgm);margin-bottom:4px">MÉDIA GERAL</div>
+        <div class="res-badge">${geral.toFixed(1)}</div>
+      </div>`;
+
+    html += medias.map((m, i) => `
+      <div class="res-stat">
+        <div class="qlabel"><strong>${i + 1}.</strong> ${m.q}</div>
+        <div class="res-bar-wrap"><div class="res-bar" style="width:${(m.avg / 5 * 100).toFixed(0)}%"></div></div>
+        <div class="res-avg">${m.avg.toFixed(1)}</div>
+      </div>
+    `).join("");
+
+    if (contribs.length) {
+      html += '<div class="res-contribs"><h4>Contribuições para melhoria</h4>';
+      html += contribs.map(c =>
+        `<div class="contrib-item">${esc(c.texto)}<div class="contrib-meta">${esc(c.nome)} · ${esc(c.uf)}</div></div>`
+      ).join("");
+      html += '</div>';
+    }
+
+    html += `<div style="text-align:center;margin-top:20px">
+      <button class="btn-clean" onclick="limparTeste()">Limpar respostas de teste</button>
+    </div>`;
+
+    document.getElementById("resultsBody").innerHTML = html;
+  } catch (err) {
+    document.getElementById("resultsBody").innerHTML =
+      '<div class="res-empty">Erro ao carregar: ' + esc(err.message) + '</div>';
+  }
+}
+
+function esc(s) {
+  const d = document.createElement("div");
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+async function limparTeste() {
+  if (!confirm("Apagar TODAS as respostas de teste? Esta ação não pode ser desfeita.")) return;
+  try {
+    const snap = await db.collection("pesquisa").get();
+    const batch = db.batch();
+    snap.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+    try { localStorage.removeItem("cncg_pesquisa_ok"); } catch {}
+    toast("Respostas removidas");
+    carregarResultados();
+  } catch (err) {
+    toast("Erro: " + err.message);
+  }
+}
+
+async function init() {
+  if (!window.firebase) {
+    showView("viewForm");
+    document.getElementById("surveyForm").insertAdjacentHTML("afterbegin",
+      '<div style="background:var(--errbg);color:var(--err);padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:12px">Sem conexão com o servidor. Verifique a internet e recarregue.</div>');
+    return;
+  }
+
+  firebase.initializeApp(FB_CFG);
+  auth = firebase.auth();
+  db = firebase.firestore();
+
+  auth.onAuthStateChanged(async u => {
+    if (!u) {
+      try { await auth.signInAnonymously(); } catch (e) {
+        showView("viewForm");
+        toast("Falha na conexão. Recarregue a página.");
+      }
+      return;
+    }
+    uid = u.uid;
+
+    if (location.hash === "#resultados" && uid === CAP_UID) {
+      showView("viewResults");
+      carregarResultados();
+      return;
+    }
+
+    let jRespondeu = false;
+    try { jRespondeu = localStorage.getItem("cncg_pesquisa_ok") === "1"; } catch {}
+
+    if (jRespondeu) {
+      try {
+        const doc = await db.collection("pesquisa").doc(uid).get();
+        if (doc.exists) { showView("viewThank"); return; }
+        try { localStorage.removeItem("cncg_pesquisa_ok"); } catch {}
+      } catch {}
+    }
+
+    showView("viewForm");
+    renderQuestions();
+  });
+}
+
+init();
+</script>
+</body>
+</html>
